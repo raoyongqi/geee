@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from matplotlib.colors import LinearSegmentedColormap
 
 # 从本地读取 JSON 文件
-json_path = '青海省.json'  # 替换为你的本地 GeoJSON 文件路径
+json_path = '四川省.json'  # 替换为你的本地 GeoJSON 文件路径
 with open(json_path, 'r', encoding='utf-8') as f:
     geojson_data = json.load(f)
 
@@ -17,7 +17,7 @@ features = geojson_data['features']
 geometry = [feature['geometry'] for feature in features]
 
 # 读取 TIFF 文件并使用 GeoJSON 裁剪
-tif_path = 'tif/qinghai_dem.tif'  # 你的高程数据文件
+tif_path = 'tif/sichuan_dem.tif'  # 你的高程数据文件
 with rasterio.open(tif_path) as src:
 
     # 使用 GeoJSON 裁剪数据,使用filled false
