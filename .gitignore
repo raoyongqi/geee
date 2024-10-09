@@ -1,6 +1,6 @@
 data/
 venv/
-dem/
+dem/*.tif
 tif/
-nvdi/
-evi/
+nvdi/*.tif
+evi/*.tif
