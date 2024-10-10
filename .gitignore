@@ -5,3 +5,4 @@ tif/
 nvdi/*.tif
 evi/*.tif
 slope/*.tif
+aspect/*.tif
