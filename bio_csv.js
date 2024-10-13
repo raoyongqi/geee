@@ -31,7 +31,25 @@ var phh2o_0_5cm = phh2o.select('phh2o_0-5cm_mean');
 var soc_0_5cm = soc.select('soc_0-5cm_mean');
 var ocd_0_5cm = ocd.select('ocd_0-5cm_mean');
 var ocs_0_5cm = ocs.select('ocs_0-30cm_mean');
+var l8 = ee.ImageCollection('LANDSAT/LC08/C02/T1_TOA')
+  .filterMetadata('CLOUD_COVER', 'less_than', 30) // 过滤云量
+  .filterDate('2023-01-01', '2023-12-31') // 过滤时间范围
+  .median(); // 取中位数合成
 
+// 选择红光波段（B4）和近红外波段（B5）
+var nir = l8.select('B5');
+var red = l8.select('B4');
+
+// 计算NDVI
+var ndvi = nir.subtract(red).divide(nir.add(red)).rename('NDVI');
+// 选择红光波段（B4）、近红外波段（B5）和蓝光波段（B2）
+
+
+// 计算EVI2
+var evi = nir.subtract(red)
+    .divide(nir.add(red.multiply(2.4)).add(1))
+    .multiply(2.5)
+    .rename('EVI');
 // 定义提取气候和地形数据的函数
 var extractClimateData = function(feature) {
   var point = ee.Geometry.Point([feature.get('lon'), feature.get('lat')]);
@@ -63,7 +81,12 @@ var extractClimateData = function(feature) {
   var phh2oVal = ee.Algorithms.If(phh2oValue, phh2oValue.get('phh2o_0-5cm_mean'), null);
   var socVal = ee.Algorithms.If(socValue, socValue.get('soc_0-5cm_mean'), null);
   var ocdVal = ee.Algorithms.If(ocdValue, ocdValue.get('ocd_0-5cm_mean'), null);
-  var ocsVal = ee.Algorithms.If(ocsValue, ocsValue.get('ocs_0-5cm_mean'), null);
+  var ocsVal = ee.Algorithms.If(ocsValue, ocsValue.get('ocs_0-30cm_mean'), null);
+  
+  
+    var my_ndvi = ndvi.sample(point, 30).first().get('NDVI');
+  var my_evi = evi.sample(point, 30).first().get('EVI');
+
   // 提取气候数据
     var properties = {
     site: feature.get('site'),
@@ -79,7 +102,9 @@ var extractClimateData = function(feature) {
     phh2o_0_5cm: phh2oVal,
     soc_0_5cm: socVal,
     ocd_0_5cm: ocdVal,
-    ocs_0_5cm: ocsVal
+    ocs_0_5cm: ocsVal,
+            ndvi:my_ndvi,
+        evi:my_evi,
   };
   var climateData = dataset.sample(point, 30).first();
   var bioBands = ['bio01', 'bio02', 'bio03', 'bio04', 'bio05', 'bio06', 'bio07', 'bio08', 'bio09', 'bio10', 
@@ -126,3 +151,11 @@ var results = pointsTable.map(extractClimateData);
 
 // 打印结果，确保提取的数据包含所有的气候变量和地形信息
 print('Extracted Climate Data and Elevation, Slope, Aspect:', results);
+
+Export.table.toDrive({
+  collection: results,
+  description: 'results_Export',
+  fileFormat: 'CSV',
+  folder: 'csvExport',  // Folder in Google Drive
+
+});
